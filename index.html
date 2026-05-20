@@ -393,6 +393,7 @@
     };
 
     const HIRES_NEEDED_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQlb5ubrEZwKLxIwVXZgeXNaRSOMJAGIYtYe4kYD5lC-HFDZQM0-UhWJVr70AmqwBYZ2qyBAqJZ5xYz/pub?gid=1821441189&single=true&output=csv';
+    const STAFFING_LEVELS_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQlb5ubrEZwKLxIwVXZgeXNaRSOMJAGIYtYe4kYD5lC-HFDZQM0-UhWJVr70AmqwBYZ2qyBAqJZ5xYz/pub?gid=532056877&single=true&output=csv';
 
     const MONTHS = ['January','February','March','April','May','June',
                     'July','August','September','October','November','December'];
@@ -539,28 +540,45 @@
 
       const headers = rows[0].map(h => h.trim());
 
-      const COL = {
-        store: findCol(headers, 'Store Name', 'Store'),
-        gm: findCol(headers, 'GM Name', 'GM'),
-      };
+      // Try to find columns by header name first
+      let storeCol = findCol(headers, 'Store Name', 'Store');
+      let fillCols = MONTH_SHORT.map((s, i) => findCol(headers, `${s} Fill`, `${MONTHS[i]} Fill`));
+      let capCols = MONTH_SHORT.map((s, i) => findCol(headers, `${s} Cap`, `${MONTHS[i]} Cap`));
+      let wksCols = MONTH_SHORT.map((s, i) => findCol(headers, `${s} Wks`, `${MONTHS[i]} Wks`, `${s} Weeks`));
 
-      // Try short and long month names for Fill/Cap/Wks columns
-      const fillCols = MONTH_SHORT.map((s, i) => findCol(headers, `${s} Fill`, `${MONTHS[i]} Fill`));
-      const capCols = MONTH_SHORT.map((s, i) => findCol(headers, `${s} Cap`, `${MONTHS[i]} Cap`));
-      const wksCols = MONTH_SHORT.map((s, i) => findCol(headers, `${s} Wks`, `${MONTHS[i]} Wks`, `${s} Weeks`));
+      // FALLBACK: If header lookup failed for the month columns, use the Apps Script's
+      // hardcoded indices. The COMPILED DATA tab from the Gold Mine has a known layout:
+      //   col 1  = Store Name
+      //   cols 16-27 = Jan Fill through Dec Fill
+      //   cols 36-47 = Jan Cap through Dec Cap
+      //   cols 48-59 = Jan Wks through Dec Wks
+      const fillBroken = fillCols.some(c => c < 0);
+      const capBroken = capCols.some(c => c < 0);
+      const wksBroken = wksCols.some(c => c < 0);
 
-      // Log what we found, for debugging in the browser console
+      if (storeCol < 0) storeCol = 1;
+      if (fillBroken) fillCols = MONTH_SHORT.map((_, i) => 16 + i);
+      if (capBroken) capCols = MONTH_SHORT.map((_, i) => 36 + i);
+      if (wksBroken) wksCols = MONTH_SHORT.map((_, i) => 48 + i);
+
+      const COL = { store: storeCol };
+
+      // Always log debug info for Zone A so we can verify
       if (zone === 'A') {
         console.log('=== ZONE A DEBUG ===');
-        console.log('Total headers found:', headers.length);
+        console.log('Header lookup status:',
+          { fillBroken, capBroken, wksBroken },
+          'fallback used:', fillBroken || capBroken || wksBroken);
+        console.log('Total headers:', headers.length);
         console.log('All headers:', headers);
-        console.log('store col idx:', COL.store);
+        console.log('store col:', storeCol);
         console.log('fillCols (Jan-Dec):', fillCols);
         console.log('capCols (Jan-Dec):', capCols);
         console.log('wksCols (Jan-Dec):', wksCols);
         if (rows[1]) {
+          console.log('First data row length:', rows[1].length);
           console.log('First data row:', rows[1]);
-          console.log('  -> store name:', rows[1][COL.store]);
+          console.log('  -> store name:', rows[1][storeCol]);
           console.log('  -> Jul Fill (col ' + fillCols[6] + '):', rows[1][fillCols[6]]);
           console.log('  -> Jul Cap (col ' + capCols[6] + '):', rows[1][capCols[6]]);
           console.log('  -> Jul Wks (col ' + wksCols[6] + '):', rows[1][wksCols[6]]);
