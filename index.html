@@ -513,6 +513,8 @@
           const r = rows[i];
           const locRaw = (r[locCol] || '').trim();
           if (!locRaw || locRaw.toLowerCase() === 'location') continue;
+          // Skip the grand-total summary row at the bottom of the sheet
+          if (locRaw.toLowerCase() === 'total' || locRaw.toLowerCase() === 'totals') continue;
           const loc = normalizeName(locRaw);
           const totalRaw = (r[COL.total] || '').trim();
           const total = totalRaw === '-' || totalRaw === '' ? 0 : num(totalRaw);
