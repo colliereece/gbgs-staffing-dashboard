@@ -140,6 +140,21 @@
     .pill.under { background: rgba(251, 175, 45, 0.2); color: #ffc680; }
     .pill.sweet { background: rgba(117, 224, 153, 0.2); color: #8de8ad; }
     .pill.over { background: rgba(74, 130, 255, 0.25); color: #93b0ff; }
+    .pill.hires {
+      background: rgba(158, 40, 181, 0.22);
+      color: #d59ce4;
+      margin-left: 8px;
+      position: relative;
+    }
+    .pill.hires::before {
+      content: '';
+      position: absolute;
+      left: -8px;
+      top: 20%;
+      bottom: 20%;
+      width: 1px;
+      background: rgba(255, 255, 255, 0.15);
+    }
 
     main { padding: 28px 40px 60px; }
 
@@ -633,11 +648,13 @@
         if (c.fill === 0) return;
         counts[c.health.key]++;
       });
+      const totalHires = Object.values(hiresMap).reduce((sum, h) => sum + (h.total || 0), 0);
       document.getElementById('pills').innerHTML = `
         <div class="pill critical"><span class="count">${counts.critical}</span> Critical</div>
         <div class="pill under"><span class="count">${counts.understaffed}</span> Understaffed</div>
         <div class="pill sweet"><span class="count">${counts.sweet}</span> Sweet Spot</div>
         <div class="pill over"><span class="count">${counts.over}</span> Overstaffed</div>
+        <div class="pill hires"><span class="count">${totalHires}</span> Need to hire</div>
       `;
     }
 
