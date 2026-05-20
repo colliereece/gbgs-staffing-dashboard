@@ -454,6 +454,18 @@
       `;
     }
 
+    // Find a column index by matching the header against possible names (case-insensitive, partial OK)
+    function findCol(headers, candidates) {
+      for (let i = 0; i < headers.length; i++) {
+        const h = (headers[i] || '').toLowerCase().trim();
+        if (!h) continue;
+        for (const c of candidates) {
+          if (h === c.toLowerCase() || h.includes(c.toLowerCase())) return i;
+        }
+      }
+      return -1;
+    }
+
     async function load() {
       try {
         const res = await fetch(CSV_URL + '&t=' + Date.now()); // cache-bust
@@ -461,7 +473,7 @@
         const text = await res.text();
         const rows = parseCSV(text);
 
-        // Find header row — looking for the row containing "Location"
+        // Find header row — the row containing "Location"
         let headerIdx = -1;
         for (let i = 0; i < rows.length; i++) {
           if (rows[i].some(c => c.trim().toLowerCase() === 'location')) {
@@ -469,27 +481,43 @@
           }
         }
         if (headerIdx === -1) throw new Error('Could not find header row');
+        const headers = rows[headerIdx];
 
-        const dataRows = rows.slice(headerIdx + 1).filter(r =>
-          r.length > 1 && r[1] && r[1].trim() && !r[1].toLowerCase().includes('total')
-        );
+        // Map columns by header name, not fixed position
+        const cols = {
+          location: findCol(headers, ['Location']),
+          zone: findCol(headers, ['Zone']),
+          gm: findCol(headers, ['GM']),
+          health: findCol(headers, ['Health']),
+          coverage: findCol(headers, ['Coverage']),
+          shiftsNeeded: findCol(headers, ['Shifts/wk', 'Shifts to', '120%']),
+          ft: findCol(headers, ['% FT', 'FT']),
+          pt: findCol(headers, ['% PT', 'PT']),
+          thin: findCol(headers, ['Thin Shifts', 'Thin']),
+        };
+
+        const get = (row, key) => cols[key] >= 0 ? (row[cols[key]] || '').trim() : '';
+
+        const dataRows = rows.slice(headerIdx + 1).filter(r => {
+          const loc = get(r, 'location');
+          return loc && !loc.toLowerCase().includes('total');
+        });
 
         allRows = dataRows.map(r => ({
-          location: (r[1] || '').trim(),
-          zone: (r[3] || '').trim(),
-          gm: (r[4] || '').trim(),
-          health: (r[5] || '').trim(),
-          healthClass: classifyHealth(r[5]),
-          coverage: (r[6] || '').trim(),
-          shiftsNeeded: (r[7] || '').trim(),
-          ft: (r[8] || '').trim(),
-          pt: (r[9] || '').trim(),
-          thin: (r[10] || '').trim(),
-        })).filter(r => r.location);
+          location: get(r, 'location'),
+          zone: get(r, 'zone'),
+          gm: get(r, 'gm'),
+          health: get(r, 'health'),
+          healthClass: classifyHealth(get(r, 'health')),
+          coverage: get(r, 'coverage'),
+          shiftsNeeded: get(r, 'shiftsNeeded'),
+          ft: get(r, 'ft'),
+          pt: get(r, 'pt'),
+          thin: get(r, 'thin'),
+        }));
 
-        // Pull the timestamp from row 2 if present
-        const stampRow = rows[2] || rows[1] || [];
-        const stampText = stampRow.join(' ').match(/\d+\/\d+\/\d+,?\s*\d+:\d+:\d+\s*(?:AM|PM)?/i);
+        // Pull the timestamp from above the header row if present
+        const stampText = rows.slice(0, headerIdx).join(' ').match(/\d+\/\d+\/\d+,?\s*\d+:\d+:\d+\s*(?:AM|PM)?/i);
         document.getElementById('updated').textContent = stampText
           ? 'Sheet updated ' + stampText[0]
           : 'Loaded ' + new Date().toLocaleString();
