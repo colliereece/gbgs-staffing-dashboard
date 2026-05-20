@@ -367,16 +367,14 @@
           <tr>
             <th>Location</th>
             <th>Zone</th>
-            <th>GM</th>
             <th>Health</th>
             <th class="num">Coverage</th>
             <th class="num">Shifts/wk to 120%</th>
-            <th class="num">FT / PT</th>
-            <th>Thin Shifts (Now)</th>
+            <th>Hires Needed</th>
           </tr>
         </thead>
         <tbody id="rows">
-          <tr><td colspan="8" class="status" id="status">Loading staffing data…</td></tr>
+          <tr><td colspan="6" class="status" id="status">Loading staffing data…</td></tr>
         </tbody>
         <tfoot id="tfoot"></tfoot>
       </table>
@@ -393,6 +391,8 @@
       B: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQlb5ubrEZwKLxIwVXZgeXNaRSOMJAGIYtYe4kYD5lC-HFDZQM0-UhWJVr70AmqwBYZ2qyBAqJZ5xYz/pub?gid=173853367&single=true&output=csv',
       C: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQlb5ubrEZwKLxIwVXZgeXNaRSOMJAGIYtYe4kYD5lC-HFDZQM0-UhWJVr70AmqwBYZ2qyBAqJZ5xYz/pub?gid=967304798&single=true&output=csv'
     };
+
+    const HIRES_NEEDED_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQlb5ubrEZwKLxIwVXZgeXNaRSOMJAGIYtYe4kYD5lC-HFDZQM0-UhWJVr70AmqwBYZ2qyBAqJZ5xYz/pub?gid=1821441189&single=true&output=csv';
 
     const MONTHS = ['January','February','March','April','May','June',
                     'July','August','September','October','November','December'];
@@ -460,9 +460,75 @@
     }
 
     let allStores = [];
+    let hiresMap = {}; // location name -> { needFT, needPT, total, by, notes }
     let selectedMonth = MONTHS[new Date().getMonth()];
     let activeFilter = 'all';
     let searchTerm = '';
+
+    async function fetchHiresNeeded() {
+      try {
+        const res = await fetch(HIRES_NEEDED_URL + '&t=' + Date.now());
+        if (!res.ok) return {};
+        const text = await res.text();
+        const rows = parseCSV(text);
+        if (rows.length < 2) return {};
+
+        const headers = rows[0].map(h => h.trim());
+        const COL = {
+          location: findCol(headers, 'Location', 'Store', 'Store Name', ''),  // first col may be blank
+          needFT: findCol(headers, 'Need FT', 'FT', 'Need Full Time'),
+          needPT: findCol(headers, 'Need PT', 'PT', 'Need Part Time'),
+          total: findCol(headers, 'Total'),
+          by: findCol(headers, 'By', 'By Date', 'Deadline'),
+          notes: findCol(headers, 'Notes', 'Note'),
+        };
+
+        // The location column may be unlabeled — try position 0 if not found
+        const locCol = COL.location >= 0 ? COL.location : 0;
+
+        const map = {};
+        for (let i = 1; i < rows.length; i++) {
+          const r = rows[i];
+          const locRaw = (r[locCol] || '').trim();
+          if (!locRaw || locRaw.toLowerCase() === 'location') continue;
+          const loc = normalizeName(locRaw);
+          const totalRaw = (r[COL.total] || '').trim();
+          const total = totalRaw === '-' || totalRaw === '' ? 0 : num(totalRaw);
+          map[loc] = {
+            needFT: (r[COL.needFT] || '').trim(),
+            needPT: (r[COL.needPT] || '').trim(),
+            total: total,
+            by: (r[COL.by] || '').trim(),
+            notes: (r[COL.notes] || '').trim(),
+          };
+        }
+        console.log('Hires Needed loaded:', Object.keys(map).length, 'stores');
+        return map;
+      } catch (err) {
+        console.warn('Could not load Hires Needed:', err);
+        return {};
+      }
+    }
+
+    // Try multiple name variations to find a column index
+    function findCol(headers, ...candidates) {
+      for (const cand of candidates) {
+        const target = cand.toLowerCase().replace(/\s+/g, ' ').trim();
+        for (let i = 0; i < headers.length; i++) {
+          const h = (headers[i] || '').toLowerCase().replace(/\s+/g, ' ').trim();
+          if (h === target) return i;
+        }
+      }
+      // Loose contains fallback
+      for (const cand of candidates) {
+        const target = cand.toLowerCase().trim();
+        for (let i = 0; i < headers.length; i++) {
+          const h = (headers[i] || '').toLowerCase().trim();
+          if (h.includes(target)) return i;
+        }
+      }
+      return -1;
+    }
 
     async function fetchZone(zone) {
       const res = await fetch(ZONE_URLS[zone] + '&t=' + Date.now());
@@ -472,20 +538,22 @@
       if (rows.length < 2) return [];
 
       const headers = rows[0].map(h => h.trim());
-      const idx = (name) => headers.findIndex(h => h.toLowerCase() === name.toLowerCase());
 
       const COL = {
-        store: idx('Store Name'),
-        gm: idx('GM Name'),
-        thinHostNow: idx('Thin Shifts HOST (Now)'),
-        thinGelNow: idx('Thin Shifts GEL (Now)'),
-        ft: idx('% FT'),
-        pt: idx('% PT'),
+        store: findCol(headers, 'Store Name', 'Store'),
+        gm: findCol(headers, 'GM Name', 'GM'),
       };
 
-      const fillCols = MONTH_SHORT.map(m => idx(`${m} Fill`));
-      const capCols = MONTH_SHORT.map(m => idx(`${m} Cap`));
-      const wksCols = MONTH_SHORT.map(m => idx(`${m} Wks`));
+      // Try short and long month names for Fill/Cap/Wks columns
+      const fillCols = MONTH_SHORT.map((s, i) => findCol(headers, `${s} Fill`, `${MONTHS[i]} Fill`));
+      const capCols = MONTH_SHORT.map((s, i) => findCol(headers, `${s} Cap`, `${MONTHS[i]} Cap`));
+      const wksCols = MONTH_SHORT.map((s, i) => findCol(headers, `${s} Wks`, `${MONTHS[i]} Wks`, `${s} Weeks`));
+
+      // Log what we found, for debugging in the browser console
+      if (zone === 'A') {
+        console.log('Zone A headers:', headers);
+        console.log('Column indices — store:', COL.store, 'fillCols:', fillCols, 'capCols:', capCols, 'wksCols:', wksCols);
+      }
 
       const out = [];
       for (let i = 1; i < rows.length; i++) {
@@ -504,12 +572,7 @@
           zone: `Zone ${zone}`,
           zoneLetter: zone,
           name: normalizeName(storeName),
-          gm: (r[COL.gm] || '—').trim() || '—',
           monthly, monthlyCap, monthlyWeeks,
-          thinHostNow: (r[COL.thinHostNow] || '').trim(),
-          thinGelNow: (r[COL.thinGelNow] || '').trim(),
-          ft: num(r[COL.ft]),
-          pt: num(r[COL.pt]),
         });
       }
       return out;
@@ -517,8 +580,11 @@
 
     async function loadAll() {
       try {
-        const [a, b, c] = await Promise.all([fetchZone('A'), fetchZone('B'), fetchZone('C')]);
+        const [a, b, c, hires] = await Promise.all([
+          fetchZone('A'), fetchZone('B'), fetchZone('C'), fetchHiresNeeded()
+        ]);
         allStores = [...a, ...b, ...c];
+        hiresMap = hires;
         if (allStores.length === 0) throw new Error('No data found in any zone');
         document.getElementById('updated').textContent = 'Loaded ' + new Date().toLocaleString();
         renderAll();
@@ -582,7 +648,7 @@
       });
 
       if (rows.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="8" class="status">No locations match.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" class="status">No locations match.</td></tr>`;
         tfoot.innerHTML = '';
         return;
       }
@@ -593,31 +659,21 @@
           ? `<span class="shifts-need">+${(Math.round(c.shiftsPerWk * 10) / 10).toFixed(1)}/wk</span>`
           : `<span class="shifts-need empty">—</span>`;
 
-        const ftPct = s.ft < 1 ? Math.round(s.ft * 100) : Math.round(s.ft);
-        const ptPct = s.pt < 1 ? Math.round(s.pt * 100) : Math.round(s.pt);
-        const ratioCell = (ftPct + ptPct > 0) ? `
-          <div class="ratio">
-            <span class="ratio-text">${ftPct}/${ptPct}</span>
-            <div class="ratio-bar" title="${ftPct}% FT, ${ptPct}% PT">
-              <div class="ft" style="width:${ftPct}%"></div>
-              <div class="pt" style="width:${ptPct}%"></div>
-            </div>
-          </div>` : '<span style="color:var(--ink-muted)">—</span>';
-
+        // Hires Needed (only meaningful for current month — same caveat as Thin Shifts)
         const isCurrentRealMonth = selectedMonth === MONTHS[new Date().getMonth()];
-        let thinCell;
+        let hiresCell;
         if (!isCurrentRealMonth) {
-          thinCell = `<span class="thin muted">— (current month only)</span>`;
+          hiresCell = `<span class="thin muted">— (current month only)</span>`;
         } else {
-          const hostGood = !s.thinHostNow || s.thinHostNow === '✓ All good';
-          const gelGood = !s.thinGelNow || s.thinGelNow === '✓ All good';
-          if (hostGood && gelGood) {
-            thinCell = `<span class="thin good">✓ All good</span>`;
+          const h = hiresMap[s.name];
+          if (!h || h.total === 0) {
+            hiresCell = `<span class="thin good">✓ Fully staffed</span>`;
           } else {
-            const parts = [];
-            if (!hostGood) parts.push(`HOST: ${s.thinHostNow}`);
-            if (!gelGood) parts.push(`GEL: ${s.thinGelNow}`);
-            thinCell = `<span class="thin warn">${parts.join(' · ')}</span>`;
+            const ft = h.needFT && h.needFT !== '-' ? `${h.needFT} FT` : '';
+            const pt = h.needPT && h.needPT !== '-' ? `${h.needPT} PT` : '';
+            const parts = [ft, pt].filter(Boolean).join(' + ');
+            const byText = h.by ? ` by ${formatDate(h.by)}` : '';
+            hiresCell = `<span class="thin warn"><strong>${h.total}</strong> needed${parts ? ` (${parts})` : ''}${byText}</span>`;
           }
         }
 
@@ -625,12 +681,10 @@
           <tr>
             <td class="location">${s.name}</td>
             <td><span class="zone ${s.zoneLetter.toLowerCase()}">${s.zoneLetter}</span></td>
-            <td class="gm">${s.gm}</td>
             <td><span class="health ${c.health.key}">${c.health.label}</span></td>
             <td class="num coverage">${covDisplay}</td>
             <td class="num">${shiftsCell}</td>
-            <td class="num">${ratioCell}</td>
-            <td>${thinCell}</td>
+            <td>${hiresCell}</td>
           </tr>
         `;
       }).join('');
@@ -641,11 +695,19 @@
         : '✓ On track network-wide';
       tfoot.innerHTML = `
         <tr class="footer-row">
-          <td colspan="5">TOTALS · ${rows.length} stores shown</td>
+          <td colspan="4">TOTALS · ${rows.length} stores shown</td>
           <td class="num">${totalLabel}</td>
-          <td colspan="2"></td>
+          <td></td>
         </tr>
       `;
+    }
+
+    // Format various date inputs (ISO, locale strings, etc.) into "MMM D"
+    function formatDate(s) {
+      if (!s) return '';
+      const d = new Date(s);
+      if (isNaN(d.getTime())) return s; // fallback to original if unparseable
+      return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     }
 
     function renderAll() {
@@ -653,8 +715,8 @@
       renderTable();
       const isCurrentRealMonth = selectedMonth === MONTHS[new Date().getMonth()];
       document.getElementById('footer-note').innerHTML = isCurrentRealMonth
-        ? `Source: Hiring Dashboard · Zone A/B/C Data · Published CSVs`
-        : `Source: Hiring Dashboard · Zone A/B/C Data · <span class="now-tag">Note: "Thin Shifts (Now)" only reflects the current calendar month</span>`;
+        ? `Source: Hiring Dashboard · Zone A/B/C Data + Hires Needed · Published CSVs`
+        : `Source: Hiring Dashboard · Zone A/B/C Data · <span class="now-tag">Note: "Hires Needed" only reflects the current calendar month</span>`;
     }
 
     const monthSelect = document.getElementById('month');
