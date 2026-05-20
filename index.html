@@ -551,8 +551,20 @@
 
       // Log what we found, for debugging in the browser console
       if (zone === 'A') {
-        console.log('Zone A headers:', headers);
-        console.log('Column indices — store:', COL.store, 'fillCols:', fillCols, 'capCols:', capCols, 'wksCols:', wksCols);
+        console.log('=== ZONE A DEBUG ===');
+        console.log('Total headers found:', headers.length);
+        console.log('All headers:', headers);
+        console.log('store col idx:', COL.store);
+        console.log('fillCols (Jan-Dec):', fillCols);
+        console.log('capCols (Jan-Dec):', capCols);
+        console.log('wksCols (Jan-Dec):', wksCols);
+        if (rows[1]) {
+          console.log('First data row:', rows[1]);
+          console.log('  -> store name:', rows[1][COL.store]);
+          console.log('  -> Jul Fill (col ' + fillCols[6] + '):', rows[1][fillCols[6]]);
+          console.log('  -> Jul Cap (col ' + capCols[6] + '):', rows[1][capCols[6]]);
+          console.log('  -> Jul Wks (col ' + wksCols[6] + '):', rows[1][wksCols[6]]);
+        }
       }
 
       const out = [];
@@ -659,22 +671,17 @@
           ? `<span class="shifts-need">+${(Math.round(c.shiftsPerWk * 10) / 10).toFixed(1)}/wk</span>`
           : `<span class="shifts-need empty">—</span>`;
 
-        // Hires Needed (only meaningful for current month — same caveat as Thin Shifts)
-        const isCurrentRealMonth = selectedMonth === MONTHS[new Date().getMonth()];
+        // Hires Needed — current snapshot of what's open, independent of which month is being viewed
         let hiresCell;
-        if (!isCurrentRealMonth) {
-          hiresCell = `<span class="thin muted">— (current month only)</span>`;
+        const h = hiresMap[s.name];
+        if (!h || h.total === 0) {
+          hiresCell = `<span class="thin good">✓ Fully staffed</span>`;
         } else {
-          const h = hiresMap[s.name];
-          if (!h || h.total === 0) {
-            hiresCell = `<span class="thin good">✓ Fully staffed</span>`;
-          } else {
-            const ft = h.needFT && h.needFT !== '-' ? `${h.needFT} FT` : '';
-            const pt = h.needPT && h.needPT !== '-' ? `${h.needPT} PT` : '';
-            const parts = [ft, pt].filter(Boolean).join(' + ');
-            const byText = h.by ? ` by ${formatDate(h.by)}` : '';
-            hiresCell = `<span class="thin warn"><strong>${h.total}</strong> needed${parts ? ` (${parts})` : ''}${byText}</span>`;
-          }
+          const ft = h.needFT && h.needFT !== '-' ? `${h.needFT} FT` : '';
+          const pt = h.needPT && h.needPT !== '-' ? `${h.needPT} PT` : '';
+          const parts = [ft, pt].filter(Boolean).join(' + ');
+          const byText = h.by ? ` by ${formatDate(h.by)}` : '';
+          hiresCell = `<span class="thin warn"><strong>${h.total}</strong> needed${parts ? ` (${parts})` : ''}${byText}</span>`;
         }
 
         return `
@@ -713,10 +720,7 @@
     function renderAll() {
       renderPills();
       renderTable();
-      const isCurrentRealMonth = selectedMonth === MONTHS[new Date().getMonth()];
-      document.getElementById('footer-note').innerHTML = isCurrentRealMonth
-        ? `Source: Hiring Dashboard · Zone A/B/C Data + Hires Needed · Published CSVs`
-        : `Source: Hiring Dashboard · Zone A/B/C Data · <span class="now-tag">Note: "Hires Needed" only reflects the current calendar month</span>`;
+      document.getElementById('footer-note').innerHTML = `Source: Hiring Dashboard · Zone A/B/C Data + Hires Needed · Published CSVs`;
     }
 
     const monthSelect = document.getElementById('month');
