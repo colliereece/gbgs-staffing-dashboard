@@ -444,8 +444,12 @@
 
     function num(v) {
       if (v === null || v === undefined || v === '') return 0;
-      const n = parseFloat(String(v).replace(/[,$]/g, ''));
-      return isNaN(n) ? 0 : n;
+      const s = String(v).trim();
+      const hadPercent = s.endsWith('%');
+      const n = parseFloat(s.replace(/[,$%]/g, ''));
+      if (isNaN(n)) return 0;
+      // If the original string ended in %, it's a formatted percentage (e.g., "500%" means 5.00, "116%" means 1.16)
+      return hadPercent ? n / 100 : n;
     }
 
     // Coverage = Cap / Fill (per Apps Script)
