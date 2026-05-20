@@ -355,6 +355,7 @@
       <div class="filter-group" id="filters">
         <button class="filter-btn active" data-filter="all">All</button>
         <button class="filter-btn" data-filter="thin">Needs attention</button>
+        <button class="filter-btn" data-filter="hiring">Currently hiring</button>
         <button class="filter-btn" data-filter="A">Zone A</button>
         <button class="filter-btn" data-filter="B">Zone B</button>
         <button class="filter-btn" data-filter="C">Zone C</button>
@@ -414,7 +415,8 @@
       'BIRMINGHAM': 'Birmingham',
       'ORLANDO': 'Orlando',
       'Schaumburg*': 'Schaumburg',
-      'Minneapolis*': 'Minneapolis'
+      'Minneapolis*': 'Minneapolis',
+      'Atlanta': 'Atlanta: Battery'
     };
     function normalizeName(raw) {
       const trimmed = (raw || '').trim();
@@ -567,26 +569,10 @@
 
       const COL = { store: storeCol };
 
-      // Always log debug info for Zone A so we can verify
+      // Brief debug info — useful if columns shift again in the future
       if (zone === 'A') {
-        console.log('=== ZONE A DEBUG ===');
-        console.log('Header lookup status:',
-          { fillBroken, capBroken, wksBroken },
-          'fallback used:', fillBroken || capBroken || wksBroken);
-        console.log('Total headers:', headers.length);
-        console.log('All headers:', headers);
-        console.log('store col:', storeCol);
-        console.log('fillCols (Jan-Dec):', fillCols);
-        console.log('capCols (Jan-Dec):', capCols);
-        console.log('wksCols (Jan-Dec):', wksCols);
-        if (rows[1]) {
-          console.log('First data row length:', rows[1].length);
-          console.log('First data row:', rows[1]);
-          console.log('  -> store name:', rows[1][storeCol]);
-          console.log('  -> Jul Fill (col ' + fillCols[6] + '):', rows[1][fillCols[6]]);
-          console.log('  -> Jul Cap (col ' + capCols[6] + '):', rows[1][capCols[6]]);
-          console.log('  -> Jul Wks (col ' + wksCols[6] + '):', rows[1][wksCols[6]]);
-        }
+        const fallback = fillBroken || capBroken || wksBroken;
+        console.log(`Zone A loaded · ${headers.length} cols · fallback: ${fallback}`);
       }
 
       const out = [];
@@ -665,6 +651,11 @@
 
       if (activeFilter === 'thin') {
         rows = rows.filter(r => r.c.health.key === 'critical' || r.c.health.key === 'understaffed');
+      } else if (activeFilter === 'hiring') {
+        rows = rows.filter(r => {
+          const h = hiresMap[r.s.name];
+          return h && h.total > 0;
+        });
       } else if (['A','B','C'].includes(activeFilter)) {
         rows = rows.filter(r => r.s.zoneLetter === activeFilter);
       }
