@@ -9,21 +9,21 @@
   <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #0a1628;
-      --bg-elevated: #122340;
+      --bg: #021D41;
+      --bg-elevated: #0a2e5e;
       --bg-row: #ffffff;
-      --bg-row-alt: #f7f9fc;
-      --ink: #0a1628;
+      --bg-row-alt: #f8f9ff;
+      --ink: #021D41;
       --ink-muted: #6b7a90;
-      --line: #e4e9f0;
-      --critical-bg: #fde7e7;
-      --critical-fg: #c62828;
-      --understaffed-bg: #fff3d6;
+      --line: #e2e6f0;
+      --critical-bg: #ffe8ec;
+      --critical-fg: #d12a45;
+      --understaffed-bg: #fef6e0;
       --understaffed-fg: #b8651b;
-      --sweet-bg: #d9f5e3;
-      --sweet-fg: #1b7a3e;
-      --over-bg: #e0eaff;
-      --over-fg: #2d4eaa;
+      --sweet-bg: #e8fbf0;
+      --sweet-fg: #1f9858;
+      --over-bg: #ebf1ff;
+      --over-fg: #3461d6;
       --good-bg: #eaf6ee;
       --good-fg: #2c7a4a;
     }
@@ -57,17 +57,17 @@
       line-height: 1;
     }
 
-    .header h1 .sep { color: #4a6388; margin: 0 10px; font-weight: 500; }
+    .header h1 .sep { color: #6388b8; margin: 0 10px; font-weight: 500; }
     .header h1 .live {
       font-family: 'JetBrains Mono', monospace;
       font-size: 11px;
-      color: #5cdb95;
+      color: #75e099;
       letter-spacing: 0.1em;
       vertical-align: middle;
       margin-left: 12px;
       padding: 3px 8px;
-      background: rgba(92, 219, 149, 0.12);
-      border: 1px solid rgba(92, 219, 149, 0.3);
+      background: rgba(117, 224, 153, 0.12);
+      border: 1px solid rgba(117, 224, 153, 0.3);
       border-radius: 3px;
     }
 
@@ -77,41 +77,71 @@
       color: #8ea2c0;
       text-align: right;
     }
-
     .meta .stamp { color: #c4d2e5; }
 
-    .summary {
+    .month-bar {
       padding: 20px 40px;
       background: var(--bg-elevated);
       color: white;
       display: flex;
-      gap: 12px;
+      gap: 24px;
+      align-items: center;
       flex-wrap: wrap;
       border-bottom: 1px solid #1d3157;
     }
 
-    .pill {
-      padding: 10px 18px;
-      border-radius: 6px;
+    .month-picker {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .month-picker label {
       font-size: 13px;
+      font-weight: 500;
+      color: #c4d2e5;
+      letter-spacing: 0.02em;
+    }
+    .month-picker select {
+      background: white;
+      color: var(--bg);
+      border: none;
+      padding: 9px 14px;
+      border-radius: 6px;
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      min-width: 140px;
+    }
+    .month-picker select:focus { outline: 2px solid #75e099; outline-offset: 2px; }
+
+    .pills {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-left: auto;
+    }
+
+    .pill {
+      padding: 8px 14px;
+      border-radius: 6px;
+      font-size: 12px;
       font-weight: 600;
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 7px;
     }
     .pill .count {
       font-family: 'JetBrains Mono', monospace;
-      font-size: 16px;
+      font-size: 15px;
       font-weight: 700;
     }
-    .pill.critical { background: rgba(198, 40, 40, 0.18); color: #ff8a8a; }
-    .pill.under { background: rgba(184, 101, 27, 0.2); color: #ffc680; }
-    .pill.sweet { background: rgba(27, 122, 62, 0.2); color: #7ee5a3; }
-    .pill.over { background: rgba(45, 78, 170, 0.25); color: #93b0ff; }
+    .pill.critical { background: rgba(255, 59, 91, 0.18); color: #ff95a4; }
+    .pill.under { background: rgba(251, 175, 45, 0.2); color: #ffc680; }
+    .pill.sweet { background: rgba(117, 224, 153, 0.2); color: #8de8ad; }
+    .pill.over { background: rgba(74, 130, 255, 0.25); color: #93b0ff; }
 
-    main {
-      padding: 28px 40px 60px;
-    }
+    main { padding: 28px 40px 60px; }
 
     .controls {
       display: flex;
@@ -174,7 +204,6 @@
       border-bottom: 1px solid var(--line);
       white-space: nowrap;
     }
-
     th.num, td.num { text-align: right; font-variant-numeric: tabular-nums; }
 
     tbody tr {
@@ -184,10 +213,7 @@
     tbody tr:last-child { border-bottom: none; }
     tbody tr:hover { background: var(--bg-row-alt); }
 
-    td {
-      padding: 14px 16px;
-      font-size: 14px;
-    }
+    td { padding: 14px 16px; font-size: 14px; }
 
     .zone {
       display: inline-block;
@@ -202,6 +228,9 @@
       background: #eef2f8;
       color: var(--ink);
     }
+    .zone.a { background: #ebf1ff; color: var(--over-fg); }
+    .zone.b { background: #ffe8ec; color: var(--critical-fg); }
+    .zone.c { background: #e8fbf0; color: var(--sweet-fg); }
 
     .location { font-weight: 600; }
     .gm { color: var(--ink-muted); font-size: 13px; }
@@ -228,6 +257,17 @@
     }
     .shifts-need.empty { color: var(--ink-muted); font-weight: 400; }
 
+    .ratio {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      justify-content: flex-end;
+    }
+    .ratio-text {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      color: var(--ink-muted);
+    }
     .ratio-bar {
       display: flex;
       width: 60px;
@@ -235,7 +275,6 @@
       border-radius: 3px;
       overflow: hidden;
       background: var(--line);
-      margin-left: auto;
     }
     .ratio-bar .ft { background: var(--bg); }
     .ratio-bar .pt { background: #b8c6dd; }
@@ -247,6 +286,7 @@
     }
     .thin.good { color: var(--good-fg); font-weight: 500; }
     .thin.warn { color: var(--understaffed-fg); }
+    .thin.muted { color: var(--ink-muted); font-style: italic; }
 
     .footer-row {
       background: var(--bg);
@@ -256,6 +296,7 @@
     .footer-row td {
       padding: 16px;
       font-family: 'JetBrains Mono', monospace;
+      color: white;
     }
 
     .status {
@@ -272,10 +313,15 @@
       text-align: center;
       font-family: 'JetBrains Mono', monospace;
     }
+    .footer-note .now-tag {
+      color: var(--understaffed-fg);
+      font-weight: 600;
+    }
 
     @media (max-width: 900px) {
-      .header, .summary, main { padding-left: 20px; padding-right: 20px; }
+      .header, .month-bar, main { padding-left: 20px; padding-right: 20px; }
       .header h1 { font-size: 22px; }
+      .pills { margin-left: 0; }
       th, td { padding: 10px 12px; font-size: 13px; }
       .thin { max-width: 200px; }
     }
@@ -295,7 +341,13 @@
     </div>
   </header>
 
-  <section class="summary" id="summary"></section>
+  <section class="month-bar">
+    <div class="month-picker">
+      <label for="month">📅 Viewing month:</label>
+      <select id="month"></select>
+    </div>
+    <div class="pills" id="pills"></div>
+  </section>
 
   <main>
     <div class="controls">
@@ -326,18 +378,48 @@
         <tbody id="rows">
           <tr><td colspan="8" class="status" id="status">Loading staffing data…</td></tr>
         </tbody>
+        <tfoot id="tfoot"></tfoot>
       </table>
     </div>
 
-    <div class="footer-note">
-      Source: Hiring Dashboard · Staffing Levels tab · Published CSV
+    <div class="footer-note" id="footer-note">
+      Source: Hiring Dashboard · Zone A/B/C Data · Published CSVs
     </div>
   </main>
 
   <script>
-    const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQlb5ubrEZwKLxIwVXZgeXNaRSOMJAGIYtYe4kYD5lC-HFDZQM0-UhWJVr70AmqwBYZ2qyBAqJZ5xYz/pub?gid=532056877&single=true&output=csv';
+    const ZONE_URLS = {
+      A: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQlb5ubrEZwKLxIwVXZgeXNaRSOMJAGIYtYe4kYD5lC-HFDZQM0-UhWJVr70AmqwBYZ2qyBAqJZ5xYz/pub?gid=957066611&single=true&output=csv',
+      B: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQlb5ubrEZwKLxIwVXZgeXNaRSOMJAGIYtYe4kYD5lC-HFDZQM0-UhWJVr70AmqwBYZ2qyBAqJZ5xYz/pub?gid=173853367&single=true&output=csv',
+      C: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQlb5ubrEZwKLxIwVXZgeXNaRSOMJAGIYtYe4kYD5lC-HFDZQM0-UhWJVr70AmqwBYZ2qyBAqJZ5xYz/pub?gid=967304798&single=true&output=csv'
+    };
 
-    // Minimal CSV parser that handles quoted fields and embedded commas/newlines
+    const MONTHS = ['January','February','March','April','May','June',
+                    'July','August','September','October','November','December'];
+    const MONTH_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+    const STORE_NAME_MAP = {
+      'GBGS Opry': 'Nashville', 'Opry Mills Mall': 'Nashville', 'Opry': 'Nashville',
+      'St Louis': 'St. Louis',
+      'GBGS Wharf (2)': 'San Francisco', 'San Francisco Wharf': 'San Francisco', 'Wharf*': 'San Francisco',
+      'GBGS Las Vegas Forum': 'Las Vegas (Forum Shops)', 'LV Forum*': 'Las Vegas (Forum Shops)',
+      'GBGS New Jersey': 'New Jersey (American Dream)', 'New Jersey': 'New Jersey (American Dream)',
+      'GBGS Honolulu': 'Honolulu', 'Honolulu*': 'Honolulu',
+      'GBGS San Jose': 'San Jose', 'San Jose*': 'San Jose',
+      'GBGS Seattle Southcenter': 'Seattle (Tukwila)', 'Seattle SC*': 'Seattle (Tukwila)',
+      'GBGS Seattle Downtown': 'Seattle (Downtown)', 'Seattle DTN*': 'Seattle (Downtown)',
+      'GBGS Area 15': 'Las Vegas (Area 15)', 'A15*': 'Las Vegas (Area 15)',
+      'GBGS Murray': 'Murray', 'Murray*': 'Murray',
+      'BIRMINGHAM': 'Birmingham',
+      'ORLANDO': 'Orlando',
+      'Schaumburg*': 'Schaumburg',
+      'Minneapolis*': 'Minneapolis'
+    };
+    function normalizeName(raw) {
+      const trimmed = (raw || '').trim();
+      return STORE_NAME_MAP[trimmed] || trimmed;
+    }
+
     function parseCSV(text) {
       const rows = [];
       let row = [], field = '', inQuotes = false;
@@ -359,171 +441,87 @@
       return rows;
     }
 
-    function classifyHealth(text) {
-      const t = (text || '').toLowerCase();
-      if (t.includes('critical')) return 'critical';
-      if (t.includes('understaffed')) return 'understaffed';
-      if (t.includes('sweet')) return 'sweet';
-      if (t.includes('overstaffed')) return 'over';
-      return '';
+    function num(v) {
+      if (v === null || v === undefined || v === '') return 0;
+      const n = parseFloat(String(v).replace(/[,$]/g, ''));
+      return isNaN(n) ? 0 : n;
     }
 
-    function cleanHealth(text) {
-      return (text || '').replace(/[✗⚠✓↑]/g, '').trim();
+    // Coverage = Cap / Fill (per Apps Script)
+    //   >=131%  Overstaffed
+    //   >=120%  Sweet Spot
+    //   >=111%  Understaffed
+    //   else    Critical
+    function classifyHealth(coveragePct) {
+      if (coveragePct >= 131) return { key: 'over', label: '↑ Overstaffed' };
+      if (coveragePct >= 120) return { key: 'sweet', label: '✓ Sweet Spot' };
+      if (coveragePct >= 111) return { key: 'understaffed', label: '⚠ Understaffed' };
+      return { key: 'critical', label: '✗ Critical' };
     }
 
-    function parsePercent(s) {
-      const m = (s || '').match(/(\d+(?:\.\d+)?)/);
-      return m ? parseFloat(m[1]) : null;
-    }
-
-    let allRows = [];
+    let allStores = [];
+    let selectedMonth = MONTHS[new Date().getMonth()];
     let activeFilter = 'all';
     let searchTerm = '';
 
-    function render() {
-      const tbody = document.getElementById('rows');
-      const term = searchTerm.toLowerCase();
+    async function fetchZone(zone) {
+      const res = await fetch(ZONE_URLS[zone] + '&t=' + Date.now());
+      if (!res.ok) throw new Error(`Zone ${zone}: HTTP ${res.status}`);
+      const text = await res.text();
+      const rows = parseCSV(text);
+      if (rows.length < 2) return [];
 
-      let filtered = allRows.filter(r => {
-        if (activeFilter === 'thin') {
-          return r.healthClass === 'critical' || r.healthClass === 'understaffed';
-        }
-        if (['A', 'B', 'C'].includes(activeFilter)) {
-          return r.zone === activeFilter;
-        }
-        return true;
-      });
+      const headers = rows[0].map(h => h.trim());
+      const idx = (name) => headers.findIndex(h => h.toLowerCase() === name.toLowerCase());
 
-      if (term) {
-        filtered = filtered.filter(r =>
-          r.location.toLowerCase().includes(term) ||
-          r.gm.toLowerCase().includes(term)
-        );
-      }
+      const COL = {
+        store: idx('Store Name'),
+        gm: idx('GM Name'),
+        thinHostNow: idx('Thin Shifts HOST (Now)'),
+        thinGelNow: idx('Thin Shifts GEL (Now)'),
+        ft: idx('% FT'),
+        pt: idx('% PT'),
+      };
 
-      if (filtered.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="8" class="status">No locations match.</td></tr>`;
-        return;
-      }
+      const fillCols = MONTH_SHORT.map(m => idx(`${m} Fill`));
+      const capCols = MONTH_SHORT.map(m => idx(`${m} Cap`));
+      const wksCols = MONTH_SHORT.map(m => idx(`${m} Wks`));
 
-      tbody.innerHTML = filtered.map(r => {
-        const thinIsGood = r.thin.toLowerCase().includes('all good') || r.thin.trim() === '';
-        const thinClass = thinIsGood ? 'thin good' : 'thin warn';
-        const thinDisplay = thinIsGood ? '✓ All good' : r.thin;
+      const out = [];
+      for (let i = 1; i < rows.length; i++) {
+        const r = rows[i];
+        const storeName = (r[COL.store] || '').trim();
+        if (!storeName || storeName === 'Store Name') continue;
 
-        const shiftsCell = r.shiftsNeeded.trim()
-          ? `<span class="shifts-need">${r.shiftsNeeded}</span>`
-          : `<span class="shifts-need empty">—</span>`;
-
-        const ft = parsePercent(r.ft) || 0;
-        const pt = parsePercent(r.pt) || 0;
-        const ratioBar = (ft + pt > 0) ? `
-          <div style="display:flex;align-items:center;gap:10px;justify-content:flex-end;">
-            <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--ink-muted);">${Math.round(ft)}/${Math.round(pt)}</span>
-            <div class="ratio-bar" title="${Math.round(ft)}% FT, ${Math.round(pt)}% PT">
-              <div class="ft" style="width:${ft}%"></div>
-              <div class="pt" style="width:${pt}%"></div>
-            </div>
-          </div>
-        ` : '—';
-
-        return `
-          <tr>
-            <td class="location">${r.location}</td>
-            <td><span class="zone">${r.zone}</span></td>
-            <td class="gm">${r.gm || '—'}</td>
-            <td><span class="health ${r.healthClass}">${cleanHealth(r.health)}</span></td>
-            <td class="num coverage">${r.coverage}</td>
-            <td class="num">${shiftsCell}</td>
-            <td class="num">${ratioBar}</td>
-            <td class="${thinClass}">${thinDisplay}</td>
-          </tr>
-        `;
-      }).join('');
-    }
-
-    function renderSummary() {
-      const counts = { critical: 0, understaffed: 0, sweet: 0, over: 0 };
-      allRows.forEach(r => { if (counts[r.healthClass] !== undefined) counts[r.healthClass]++; });
-      document.getElementById('summary').innerHTML = `
-        <div class="pill critical"><span class="count">${counts.critical}</span> Critical</div>
-        <div class="pill under"><span class="count">${counts.understaffed}</span> Understaffed</div>
-        <div class="pill sweet"><span class="count">${counts.sweet}</span> Sweet Spot</div>
-        <div class="pill over"><span class="count">${counts.over}</span> Overstaffed</div>
-      `;
-    }
-
-    // Find a column index by matching the header against possible names (case-insensitive, partial OK)
-    function findCol(headers, candidates) {
-      for (let i = 0; i < headers.length; i++) {
-        const h = (headers[i] || '').toLowerCase().trim();
-        if (!h) continue;
-        for (const c of candidates) {
-          if (h === c.toLowerCase() || h.includes(c.toLowerCase())) return i;
-        }
-      }
-      return -1;
-    }
-
-    async function load() {
-      try {
-        const res = await fetch(CSV_URL + '&t=' + Date.now()); // cache-bust
-        if (!res.ok) throw new Error('HTTP ' + res.status);
-        const text = await res.text();
-        const rows = parseCSV(text);
-
-        // Find header row — the row containing "Location"
-        let headerIdx = -1;
-        for (let i = 0; i < rows.length; i++) {
-          if (rows[i].some(c => c.trim().toLowerCase() === 'location')) {
-            headerIdx = i; break;
-          }
-        }
-        if (headerIdx === -1) throw new Error('Could not find header row');
-        const headers = rows[headerIdx];
-
-        // Map columns by header name, not fixed position
-        const cols = {
-          location: findCol(headers, ['Location']),
-          zone: findCol(headers, ['Zone']),
-          gm: findCol(headers, ['GM']),
-          health: findCol(headers, ['Health']),
-          coverage: findCol(headers, ['Coverage']),
-          shiftsNeeded: findCol(headers, ['Shifts/wk', 'Shifts to', '120%']),
-          ft: findCol(headers, ['% FT', 'FT']),
-          pt: findCol(headers, ['% PT', 'PT']),
-          thin: findCol(headers, ['Thin Shifts', 'Thin']),
-        };
-
-        const get = (row, key) => cols[key] >= 0 ? (row[cols[key]] || '').trim() : '';
-
-        const dataRows = rows.slice(headerIdx + 1).filter(r => {
-          const loc = get(r, 'location');
-          return loc && !loc.toLowerCase().includes('total');
+        const monthly = {}, monthlyCap = {}, monthlyWeeks = {};
+        MONTHS.forEach((m, mi) => {
+          monthly[m] = num(r[fillCols[mi]]);
+          monthlyCap[m] = num(r[capCols[mi]]);
+          monthlyWeeks[m] = num(r[wksCols[mi]]) || 4;
         });
 
-        allRows = dataRows.map(r => ({
-          location: get(r, 'location'),
-          zone: get(r, 'zone'),
-          gm: get(r, 'gm'),
-          health: get(r, 'health'),
-          healthClass: classifyHealth(get(r, 'health')),
-          coverage: get(r, 'coverage'),
-          shiftsNeeded: get(r, 'shiftsNeeded'),
-          ft: get(r, 'ft'),
-          pt: get(r, 'pt'),
-          thin: get(r, 'thin'),
-        }));
+        out.push({
+          zone: `Zone ${zone}`,
+          zoneLetter: zone,
+          name: normalizeName(storeName),
+          gm: (r[COL.gm] || '—').trim() || '—',
+          monthly, monthlyCap, monthlyWeeks,
+          thinHostNow: (r[COL.thinHostNow] || '').trim(),
+          thinGelNow: (r[COL.thinGelNow] || '').trim(),
+          ft: num(r[COL.ft]),
+          pt: num(r[COL.pt]),
+        });
+      }
+      return out;
+    }
 
-        // Pull the timestamp from above the header row if present
-        const stampText = rows.slice(0, headerIdx).join(' ').match(/\d+\/\d+\/\d+,?\s*\d+:\d+:\d+\s*(?:AM|PM)?/i);
-        document.getElementById('updated').textContent = stampText
-          ? 'Sheet updated ' + stampText[0]
-          : 'Loaded ' + new Date().toLocaleString();
-
-        renderSummary();
-        render();
+    async function loadAll() {
+      try {
+        const [a, b, c] = await Promise.all([fetchZone('A'), fetchZone('B'), fetchZone('C')]);
+        allStores = [...a, ...b, ...c];
+        if (allStores.length === 0) throw new Error('No data found in any zone');
+        document.getElementById('updated').textContent = 'Loaded ' + new Date().toLocaleString();
+        renderAll();
       } catch (err) {
         document.getElementById('status').textContent = 'Failed to load: ' + err.message;
         document.getElementById('status').classList.add('error');
@@ -531,10 +529,149 @@
       }
     }
 
-    // Event wiring
+    function computeRow(s, month) {
+      const fill = s.monthly[month] || 0;
+      const cap = s.monthlyCap[month] || 0;
+      const wks = s.monthlyWeeks[month] || 4;
+      const coverage = (fill > 0) ? (cap / fill) * 100 : 0;
+      const health = classifyHealth(coverage);
+      const needed = (fill * 1.2) - cap;
+      const shiftsPerWk = (needed > 0 && wks > 0) ? (needed / wks) : 0;
+      return { fill, cap, wks, coverage, health, shiftsPerWk };
+    }
+
+    function renderPills() {
+      const counts = { critical: 0, understaffed: 0, sweet: 0, over: 0 };
+      allStores.forEach(s => {
+        const c = computeRow(s, selectedMonth);
+        if (c.fill === 0) return;
+        counts[c.health.key]++;
+      });
+      document.getElementById('pills').innerHTML = `
+        <div class="pill critical"><span class="count">${counts.critical}</span> Critical</div>
+        <div class="pill under"><span class="count">${counts.understaffed}</span> Understaffed</div>
+        <div class="pill sweet"><span class="count">${counts.sweet}</span> Sweet Spot</div>
+        <div class="pill over"><span class="count">${counts.over}</span> Overstaffed</div>
+      `;
+    }
+
+    function renderTable() {
+      const tbody = document.getElementById('rows');
+      const tfoot = document.getElementById('tfoot');
+      const term = searchTerm.toLowerCase();
+
+      let rows = allStores.map(s => ({ s, c: computeRow(s, selectedMonth) }))
+                          .filter(r => r.c.fill > 0);
+
+      if (activeFilter === 'thin') {
+        rows = rows.filter(r => r.c.health.key === 'critical' || r.c.health.key === 'understaffed');
+      } else if (['A','B','C'].includes(activeFilter)) {
+        rows = rows.filter(r => r.s.zoneLetter === activeFilter);
+      }
+
+      if (term) {
+        rows = rows.filter(r =>
+          r.s.name.toLowerCase().includes(term) ||
+          r.s.gm.toLowerCase().includes(term)
+        );
+      }
+
+      rows.sort((a, b) => {
+        if (a.s.zoneLetter !== b.s.zoneLetter) return a.s.zoneLetter.localeCompare(b.s.zoneLetter);
+        return a.c.coverage - b.c.coverage;
+      });
+
+      if (rows.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" class="status">No locations match.</td></tr>`;
+        tfoot.innerHTML = '';
+        return;
+      }
+
+      tbody.innerHTML = rows.map(({ s, c }) => {
+        const covDisplay = Math.round(c.coverage) + '%';
+        const shiftsCell = c.shiftsPerWk > 0
+          ? `<span class="shifts-need">+${(Math.round(c.shiftsPerWk * 10) / 10).toFixed(1)}/wk</span>`
+          : `<span class="shifts-need empty">—</span>`;
+
+        const ftPct = s.ft < 1 ? Math.round(s.ft * 100) : Math.round(s.ft);
+        const ptPct = s.pt < 1 ? Math.round(s.pt * 100) : Math.round(s.pt);
+        const ratioCell = (ftPct + ptPct > 0) ? `
+          <div class="ratio">
+            <span class="ratio-text">${ftPct}/${ptPct}</span>
+            <div class="ratio-bar" title="${ftPct}% FT, ${ptPct}% PT">
+              <div class="ft" style="width:${ftPct}%"></div>
+              <div class="pt" style="width:${ptPct}%"></div>
+            </div>
+          </div>` : '<span style="color:var(--ink-muted)">—</span>';
+
+        const isCurrentRealMonth = selectedMonth === MONTHS[new Date().getMonth()];
+        let thinCell;
+        if (!isCurrentRealMonth) {
+          thinCell = `<span class="thin muted">— (current month only)</span>`;
+        } else {
+          const hostGood = !s.thinHostNow || s.thinHostNow === '✓ All good';
+          const gelGood = !s.thinGelNow || s.thinGelNow === '✓ All good';
+          if (hostGood && gelGood) {
+            thinCell = `<span class="thin good">✓ All good</span>`;
+          } else {
+            const parts = [];
+            if (!hostGood) parts.push(`HOST: ${s.thinHostNow}`);
+            if (!gelGood) parts.push(`GEL: ${s.thinGelNow}`);
+            thinCell = `<span class="thin warn">${parts.join(' · ')}</span>`;
+          }
+        }
+
+        return `
+          <tr>
+            <td class="location">${s.name}</td>
+            <td><span class="zone ${s.zoneLetter.toLowerCase()}">${s.zoneLetter}</span></td>
+            <td class="gm">${s.gm}</td>
+            <td><span class="health ${c.health.key}">${c.health.label}</span></td>
+            <td class="num coverage">${covDisplay}</td>
+            <td class="num">${shiftsCell}</td>
+            <td class="num">${ratioCell}</td>
+            <td>${thinCell}</td>
+          </tr>
+        `;
+      }).join('');
+
+      const totalShifts = rows.reduce((sum, r) => sum + r.c.shiftsPerWk, 0);
+      const totalLabel = totalShifts > 0
+        ? `+${(Math.round(totalShifts * 100) / 100).toFixed(2)}/wk needed`
+        : '✓ On track network-wide';
+      tfoot.innerHTML = `
+        <tr class="footer-row">
+          <td colspan="5">TOTALS · ${rows.length} stores shown</td>
+          <td class="num">${totalLabel}</td>
+          <td colspan="2"></td>
+        </tr>
+      `;
+    }
+
+    function renderAll() {
+      renderPills();
+      renderTable();
+      const isCurrentRealMonth = selectedMonth === MONTHS[new Date().getMonth()];
+      document.getElementById('footer-note').innerHTML = isCurrentRealMonth
+        ? `Source: Hiring Dashboard · Zone A/B/C Data · Published CSVs`
+        : `Source: Hiring Dashboard · Zone A/B/C Data · <span class="now-tag">Note: "Thin Shifts (Now)" only reflects the current calendar month</span>`;
+    }
+
+    const monthSelect = document.getElementById('month');
+    MONTHS.forEach(m => {
+      const opt = document.createElement('option');
+      opt.value = m; opt.textContent = m;
+      if (m === selectedMonth) opt.selected = true;
+      monthSelect.appendChild(opt);
+    });
+    monthSelect.addEventListener('change', (e) => {
+      selectedMonth = e.target.value;
+      renderAll();
+    });
+
     document.getElementById('search').addEventListener('input', (e) => {
       searchTerm = e.target.value;
-      render();
+      renderTable();
     });
 
     document.getElementById('filters').addEventListener('click', (e) => {
@@ -542,12 +679,11 @@
       document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
       e.target.classList.add('active');
       activeFilter = e.target.dataset.filter;
-      render();
+      renderTable();
     });
 
-    load();
-    // Auto-refresh every 5 minutes
-    setInterval(load, 5 * 60 * 1000);
+    loadAll();
+    setInterval(loadAll, 5 * 60 * 1000);
   </script>
 </body>
 </html>
