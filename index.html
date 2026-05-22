@@ -408,13 +408,15 @@
     };
 
     const HIRES_NEEDED_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQlb5ubrEZwKLxIwVXZgeXNaRSOMJAGIYtYe4kYD5lC-HFDZQM0-UhWJVr70AmqwBYZ2qyBAqJZ5xYz/pub?gid=1821441189&single=true&output=csv';
-    const STAFFING_LEVELS_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQlb5ubrEZwKLxIwVXZgeXNaRSOMJAGIYtYe4kYD5lC-HFDZQM0-UhWJVr70AmqwBYZ2qyBAqJZ5xYz/pub?gid=532056877&single=true&output=csv';
+    const STORE_NAMES_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQlb5ubrEZwKLxIwVXZgeXNaRSOMJAGIYtYe4kYD5lC-HFDZQM0-UhWJVr70AmqwBYZ2qyBAqJZ5xYz/pub?gid=837090199&single=true&output=csv';
 
     const MONTHS = ['January','February','March','April','May','June',
                     'July','August','September','October','November','December'];
     const MONTH_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
-    const STORE_NAME_MAP = {
+    // Fallback map — only used if the Store Names tab fails to load.
+    // The live map (built from the "Store Names" tab) takes priority.
+    const FALLBACK_NAME_MAP = {
       'GBGS Opry': 'Nashville', 'Opry Mills Mall': 'Nashville', 'Opry': 'Nashville',
       'St Louis': 'St. Louis',
       'GBGS Wharf (2)': 'San Francisco', 'San Francisco Wharf': 'San Francisco', 'Wharf*': 'San Francisco',
@@ -432,9 +434,46 @@
       'Minneapolis*': 'Minneapolis',
       'Atlanta': 'Atlanta: Battery'
     };
+
+    // Live name map, populated from the Store Names tab at load. Starts as the fallback.
+    let nameMap = { ...FALLBACK_NAME_MAP };
+
     function normalizeName(raw) {
       const trimmed = (raw || '').trim();
-      return STORE_NAME_MAP[trimmed] || trimmed;
+      return nameMap[trimmed] || trimmed;
+    }
+
+    // Fetch the Store Names tab and rebuild nameMap from it.
+    // Columns: Raw Name (A), Display Name (B), Zone (C)
+    async function fetchStoreNames() {
+      try {
+        const res = await fetch(STORE_NAMES_URL + '&t=' + Date.now());
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const text = await res.text();
+        const rows = parseCSV(text);
+        if (rows.length < 2) throw new Error('No rows');
+
+        const headers = rows[0].map(h => h.trim());
+        const rawCol = findCol(headers, 'Raw Name', 'Raw');
+        const displayCol = findCol(headers, 'Display Name', 'Display', 'Normalized');
+        const rIdx = rawCol >= 0 ? rawCol : 0;
+        const dIdx = displayCol >= 0 ? displayCol : 1;
+
+        const map = {};
+        for (let i = 1; i < rows.length; i++) {
+          const raw = (rows[i][rIdx] || '').trim();
+          const display = (rows[i][dIdx] || '').trim();
+          if (!raw || !display) continue;
+          map[raw] = display;
+        }
+        if (Object.keys(map).length > 0) {
+          nameMap = map; // replace fallback with the live map
+          console.log('Store Names map loaded:', Object.keys(map).length, 'entries');
+        }
+      } catch (err) {
+        console.warn('Could not load Store Names tab, using fallback map:', err);
+        // nameMap already holds the fallback, so nothing to do
+      }
     }
 
     function parseCSV(text) {
@@ -616,6 +655,9 @@
 
     async function loadAll() {
       try {
+        // Load the name map FIRST so all subsequent normalization uses the live map
+        await fetchStoreNames();
+
         const [a, b, c, hires] = await Promise.all([
           fetchZone('A'), fetchZone('B'), fetchZone('C'), fetchHiresNeeded()
         ]);
