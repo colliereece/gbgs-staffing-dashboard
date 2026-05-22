@@ -370,7 +370,6 @@
       <div class="filter-group" id="filters">
         <button class="filter-btn active" data-filter="all">All</button>
         <button class="filter-btn" data-filter="thin">Needs attention</button>
-        <button class="filter-btn" data-filter="hiring">Currently hiring</button>
         <button class="filter-btn" data-filter="A">Zone A</button>
         <button class="filter-btn" data-filter="B">Zone B</button>
         <button class="filter-btn" data-filter="C">Zone C</button>
@@ -669,11 +668,11 @@
                           .filter(r => r.c.fill > 0);
 
       if (activeFilter === 'thin') {
-        rows = rows.filter(r => r.c.health.key === 'critical' || r.c.health.key === 'understaffed');
-      } else if (activeFilter === 'hiring') {
         rows = rows.filter(r => {
+          const needsStaffing = r.c.health.key === 'critical' || r.c.health.key === 'understaffed';
           const h = hiresMap[r.s.name];
-          return h && h.total > 0;
+          const isHiring = h && h.total > 0;
+          return needsStaffing || isHiring;
         });
       } else if (['A','B','C'].includes(activeFilter)) {
         rows = rows.filter(r => r.s.zoneLetter === activeFilter);
